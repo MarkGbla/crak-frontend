@@ -6,7 +6,7 @@ This repository is intentionally separate from [`zNi0q/crak-backend`](https://gi
 
 ## What is included
 
-- Original marketing site inspired by Bumpa's spacious, product-led design language
+
 - Responsive dashboard for overview, referrals, rewards, wallet, API keys and settings
 - Interactive referral-creation and wallet-funding demos
 - Driver.js onboarding tour
