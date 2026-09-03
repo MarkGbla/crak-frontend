@@ -116,6 +116,18 @@ button, a { -webkit-tap-highlight-color: transparent; }
   padding-inline: 24px;
 }
 
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 650ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 @keyframes marquee-scroll {
   to { transform: translateX(-50%); }
 }
@@ -155,5 +167,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
   .marquee-track {
     animation: none;
+  }
+
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none !important;
   }
 }
