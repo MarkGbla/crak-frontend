@@ -62,7 +62,7 @@ export default function Home() {
       <section className="relative pb-20 pt-12 sm:pb-24 sm:pt-20 xl:pt-24">
         <div className="absolute -left-40 top-36 size-[440px] rounded-full bg-[#ecf8ef] blur-3xl" />
         <div className="container-shell relative grid items-center gap-12 sm:gap-16 min-[1180px]:grid-cols-[.92fr_1.08fr]">
-          <ScrollReveal className="min-w-0">
+          <div>
             <h1 className="display-title max-w-[680px] text-[clamp(2.625rem,9vw,4.75rem)] font-semibold leading-[.98]">
               Turn happy customers into your <span className="text-[#087a4f]">growth engine.</span>
             </h1>
@@ -77,10 +77,8 @@ export default function Home() {
               <span className="inline-flex items-center gap-1.5"><BadgeCheck size={15} className="text-[#087a4f]" /> No setup fee</span>
               <span className="inline-flex items-center gap-1.5"><ShieldCheck size={15} className="text-[#087a4f]" /> Secure wallet controls</span>
             </div>
-          </ScrollReveal>
-          <ScrollReveal delay={120}>
-            <ProductPreview />
-          </ScrollReveal>
+          </div>
+          <ProductPreview />
         </div>
       </section>
 
