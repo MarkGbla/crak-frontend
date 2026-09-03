@@ -91,7 +91,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .marquee-shell {
   overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }
 
 .marquee-track {
@@ -108,7 +109,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .marquee-group {
   display: flex;
-  min-width: 100vw;
+  width: min(1180px, calc(100vw - 40px));
   flex-shrink: 0;
   align-items: center;
   justify-content: space-around;
@@ -129,7 +130,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 }
 
 @keyframes marquee-scroll {
-  to { transform: translateX(-50%); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
 
 .driver-popover.crak-tour {
@@ -154,6 +155,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .container-shell { width: min(100% - 28px, 1180px); }
 
   .marquee-group {
+    width: calc(100vw - 28px);
     gap: 16px;
     padding-inline: 8px;
   }

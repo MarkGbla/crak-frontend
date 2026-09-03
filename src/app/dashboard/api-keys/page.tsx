@@ -1,10 +1,4 @@
 import type { Metadata } from "next";
-import { Copy, KeyRound, Plus, ShieldCheck, Trash2 } from "lucide-react";
-
+import { ApiKeysLiveView } from "@/components/dashboard/live-pages";
 export const metadata: Metadata = { title: "API keys" };
-
-export default function ApiKeysPage() {
-  return (
-    <div className="mx-auto max-w-4xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.12em] text-[#849087]">Developers</p><h1 className="mt-2 text-[30px] font-semibold tracking-[-.045em] sm:text-4xl">API keys</h1><p className="mt-2 text-sm text-[#6d7971]">Create server-to-server credentials for this workspace.</p></div><button className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#087a4f] px-4 text-sm font-bold text-white"><Plus size={17} /> Create API key</button></div><div className="mt-7 flex items-start gap-3 rounded-xl border border-[#cbdccb] bg-[#eaf6ee] p-4 text-xs leading-5 text-[#4c6555]"><ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#087a4f]" /><p>Plaintext keys are shown only once. Store new keys in a secure secret manager and revoke anything you no longer use.</p></div><section className="mt-4 overflow-hidden rounded-2xl border border-[#dfe5df] bg-white"><div className="border-b border-[#e5eae6] px-6 py-4"><h2 className="text-base font-bold">Workspace keys</h2></div>{[{ name: "Production server", hint: "crak_live_••••7FH2", role: "member", last: "2 hours ago" }, { name: "Analytics sync", hint: "crak_live_••••81KD", role: "viewer", last: "3 days ago" }].map((key) => <div key={key.name} className="flex flex-col gap-4 border-b border-[#edf0ed] px-6 py-5 last:border-0 sm:flex-row sm:items-center"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#f1ecff] text-[#6954a4]"><KeyRound size={18} /></span><div className="min-w-0 flex-1"><p className="text-sm font-bold">{key.name}</p><button className="mt-1 inline-flex items-center gap-1.5 font-mono text-[10px] text-[#7c8880]">{key.hint} <Copy size={11} /></button></div><span className="w-fit rounded-full bg-[#f1f4f1] px-2.5 py-1 text-[10px] font-bold text-[#66736b]">{key.role}</span><p className="text-[10px] text-[#8b958e]">Last used {key.last}</p><button className="grid size-9 place-items-center rounded-lg border border-[#ecd8d2] text-[#b25842]" aria-label={`Revoke ${key.name}`}><Trash2 size={15} /></button></div>)}</section></div>
-  );
-}
+export default function ApiKeysPage() { return <ApiKeysLiveView />; }
