@@ -81,11 +81,15 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-y border-[#e1e7e2] bg-white py-7">
-        <div className="container-shell flex flex-wrap items-center justify-center gap-3 sm:justify-between">
-          {featureChips.map(([Icon, label]) => (
-            <div key={label} className="inline-flex items-center gap-2 rounded-full border border-[#e0e7e1] bg-[#fbfcf8] px-4 py-2 text-xs font-semibold text-[#4e5d53]">
-              <Icon size={15} className="text-[#087a4f]" /> {label}
+      <section className="marquee-shell border-y border-[#e1e7e2] bg-white py-7" aria-label="CRAK features">
+        <div className="marquee-track">
+          {[0, 1].map((copy) => (
+            <div key={copy} className="marquee-group" aria-hidden={copy === 1}>
+              {featureChips.map(([Icon, label]) => (
+                <div key={label} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#e0e7e1] bg-[#fbfcf8] px-4 py-2 text-xs font-semibold text-[#4e5d53]">
+                  <Icon size={15} className="text-[#087a4f]" /> {label}
+                </div>
+              ))}
             </div>
           ))}
         </div>

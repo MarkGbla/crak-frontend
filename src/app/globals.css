@@ -89,6 +89,37 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background-size: 16px 16px;
 }
 
+.marquee-shell {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 22s linear infinite;
+  will-change: transform;
+}
+
+.marquee-shell:hover .marquee-track,
+.marquee-shell:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+.marquee-group {
+  display: flex;
+  min-width: 100vw;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-around;
+  gap: 36px;
+  padding-inline: 24px;
+}
+
+@keyframes marquee-scroll {
+  to { transform: translateX(-50%); }
+}
+
 .driver-popover.crak-tour {
   border-radius: 14px;
   padding: 18px;
@@ -115,5 +146,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   *, *::before, *::after {
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .marquee-track {
+    animation: none;
   }
 }
