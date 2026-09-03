@@ -1,4 +1,5 @@
 import { ArrowUpRight, Banknote, Check, Gift, UsersRound } from "lucide-react";
+import { AnimatedAmount } from "@/components/animated-amount";
 
 const activity = [
   { name: "Mariama K.", detail: "Referred a new customer", value: "+Le 75", tone: "bg-[#e8f6ed]" },
@@ -18,7 +19,7 @@ export function ProductPreview() {
         <div className="grid gap-4 p-5 sm:grid-cols-[1.1fr_.9fr]">
           <div className="rounded-2xl bg-[#0b6b48] p-5 text-white">
             <div className="flex items-center justify-between text-xs text-white/70"><span>Reward wallet</span><Banknote size={17} /></div>
-            <p className="mt-7 text-[28px] font-bold tracking-[-0.04em]">Le 24,580</p>
+            <p className="mt-7 text-[28px] font-bold tracking-[-0.04em]"><AnimatedAmount value={24580} /></p>
             <p className="mt-1 text-xs text-white/65">Available to reward customers</p>
             <button className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-bold text-[#075f40]">Fund wallet <ArrowUpRight size={14} /></button>
           </div>

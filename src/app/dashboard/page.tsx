@@ -1,4 +1,5 @@
 import { ArrowDownLeft, ArrowRight, ArrowUpRight, Banknote, Gift, Plus, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { AnimatedAmount } from "@/components/animated-amount";
 
 const bars = [42, 58, 47, 72, 65, 83, 76, 93, 69, 88, 96, 84];
 const activity = [
@@ -20,7 +21,7 @@ export default function DashboardPage() {
         <div data-tour="wallet" className="relative overflow-hidden rounded-2xl bg-[#0b6847] p-6 text-white sm:p-7">
           <div className="dot-grid absolute inset-y-0 right-0 w-1/2 opacity-15" />
           <div className="relative flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-            <div><span className="inline-flex items-center gap-2 text-xs font-semibold text-white/68"><WalletCards size={16} /> Available reward balance</span><p className="mt-5 text-[38px] font-semibold tracking-[-0.05em] sm:text-[46px]">Le 24,580.00</p><p className="mt-2 text-xs text-white/62">≈ USD 1,063.80 · Updated just now</p></div>
+            <div><span className="inline-flex items-center gap-2 text-xs font-semibold text-white/68"><WalletCards size={16} /> Available reward balance</span><p className="mt-5 text-[38px] font-semibold tracking-[-0.05em] sm:text-[46px]"><AnimatedAmount value={24580} fractionDigits={2} /></p><p className="mt-2 text-xs text-white/62">≈ USD 1,063.80 · Updated just now</p></div>
             <div className="flex gap-2"><button className="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-4 text-xs font-bold text-[#075f40]" type="button"><ArrowDownLeft size={15} /> Fund wallet</button><button className="grid size-10 place-items-center rounded-lg border border-white/20 bg-white/10" aria-label="View wallet"><ArrowUpRight size={16} /></button></div>
           </div>
         </div>
