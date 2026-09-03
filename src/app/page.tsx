@@ -136,8 +136,7 @@ export default function Home() {
         <div className="relative overflow-hidden rounded-[28px] bg-[#13211a] px-7 py-14 text-white sm:px-14 sm:py-20">
           <div className="dot-grid absolute inset-y-0 right-0 w-1/2 opacity-20" />
           <div className="relative max-w-2xl">
-            <span className="inline-flex rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-[#dafa7b]">Ready when you are</span>
-            <h2 className="display-title mt-6 text-4xl font-semibold leading-tight sm:text-6xl">Your next customer could come from your best one.</h2>
+            <h2 className="display-title text-4xl font-semibold leading-tight sm:text-6xl">Your next customer could come from your best one.</h2>
             <p className="mt-5 max-w-xl leading-7 text-white/66">Open the product preview and see how CRAK turns referrals and rewards into one calm, connected workflow.</p>
             <Link href="/dashboard" className="mt-8 inline-flex min-h-12 items-center gap-2 rounded-[10px] bg-[#dafa7b] px-5 text-sm font-bold text-[#13211a] transition hover:bg-white">View product preview <ArrowRight size={17} /></Link>
           </div>
