@@ -140,6 +140,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 @media (max-width: 640px) {
   .container-shell { width: min(100% - 28px, 1180px); }
+
+  .marquee-group {
+    gap: 16px;
+    padding-inline: 8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
