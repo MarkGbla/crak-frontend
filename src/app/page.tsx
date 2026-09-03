@@ -8,7 +8,6 @@ import {
   Menu,
   MousePointerClick,
   ShieldCheck,
-  Sparkles,
   WalletCards,
   Zap,
 } from "lucide-react";
@@ -63,8 +62,7 @@ export default function Home() {
         <div className="absolute -left-40 top-36 size-[440px] rounded-full bg-[#ecf8ef] blur-3xl" />
         <div className="container-shell relative grid items-center gap-16 lg:grid-cols-[.92fr_1.08fr]">
           <div>
-            <span className="eyebrow"><Sparkles size={13} /> Built for ambitious businesses</span>
-            <h1 className="display-title mt-7 max-w-[650px] text-[48px] font-semibold leading-[.98] sm:text-[68px] lg:text-[76px]">
+            <h1 className="display-title max-w-[650px] text-[48px] font-semibold leading-[.98] sm:text-[68px] lg:text-[76px]">
               Turn happy customers into your <span className="text-[#087a4f]">growth engine.</span>
             </h1>
             <p className="mt-7 max-w-[570px] text-base leading-7 text-[#657269] sm:text-lg sm:leading-8">
