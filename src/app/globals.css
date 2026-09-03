@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #fbfcf8;
+  --ink: #13211a;
+  --muted: #66736b;
+  --line: #dde4de;
+  --green: #087a4f;
+  --green-dark: #075f40;
+  --green-soft: #e8f6ed;
+  --lime: #dafa7b;
+  --peach: #fff0e3;
+  --lilac: #f1ecff;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), Arial, sans-serif;
+}
+
+button, a, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+::selection { background: var(--lime); color: var(--ink); }
+
+.container-shell {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.display-title { letter-spacing: -0.055em; text-wrap: balance; }
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #cbd9ce;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgb(255 255 255 / 78%);
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.btn-primary, .btn-secondary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 10px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.btn-primary {
+  border: 1px solid var(--green);
+  background: var(--green);
+  color: white;
+  box-shadow: 0 8px 22px rgb(8 122 79 / 16%);
+}
+
+.btn-primary:hover {
+  background: var(--green-dark);
+  border-color: var(--green-dark);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  border: 1px solid #cfd8d1;
+  background: white;
+  color: var(--ink);
+}
+
+.btn-secondary:hover { border-color: #aebcb2; background: #f7faf7; }
+
+.dot-grid {
+  background-image: radial-gradient(#9ab6a4 0.7px, transparent 0.7px);
+  background-size: 16px 16px;
+}
+
+.driver-popover.crak-tour {
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 20px 70px rgb(12 37 24 / 20%);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.driver-popover.crak-tour .driver-popover-title { color: var(--ink); font-size: 17px; }
+.driver-popover.crak-tour .driver-popover-description { color: var(--muted); line-height: 1.55; }
+.driver-popover.crak-tour .driver-popover-next-btn,
+.driver-popover.crak-tour .driver-popover-done-btn {
+  border: 0;
+  border-radius: 8px;
+  background: var(--green);
+  color: white;
+  text-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .container-shell { width: min(100% - 28px, 1180px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
