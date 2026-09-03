@@ -111,8 +111,7 @@ export default function Home() {
       <section id="features" className="container-shell pb-24 sm:pb-32">
         <div className="grid overflow-hidden rounded-[28px] border border-[#dae3dc] bg-[#eaf5ee] lg:grid-cols-2">
           <div className="flex flex-col justify-center p-8 sm:p-14 lg:p-16">
-            <span className="eyebrow w-fit">Made for real commerce</span>
-            <h2 className="display-title mt-6 text-4xl font-semibold leading-tight sm:text-5xl">Grow through the trust you have already earned.</h2>
+            <h2 className="display-title text-4xl font-semibold leading-tight sm:text-5xl">Grow through the trust you have already earned.</h2>
             <p className="mt-5 max-w-lg text-base leading-7 text-[#5f6c64]">Give loyal customers a reason to talk about your business—and give your team a clear record of every campaign, referral and reward.</p>
             <ul className="mt-7 space-y-3 text-sm font-semibold">
               {["Campaign status controls", "SLE and USD reward wallets", "Role-based team access"].map((item) => (
