@@ -1,10 +1,13 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { ArrowLeftRight, Plus, UsersRound, X } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, Plus, SlidersHorizontal, UsersRound } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { crakApi, type Referral, type ReferralStatus } from "@/lib/crak-api";
+import { crakApi, type Referral, type ReferralStatus, type RewardRules } from "@/lib/crak-api";
 import { useDashboardData } from "./dashboard-data-provider";
+import { Dialog } from "./dialog";
+import { RulesDialog } from "./rules-dialog";
+const ruleCount = (rules: RewardRules | undefined) => Object.keys(rules ?? {}).length;
 
 const fieldClass = "mt-2 h-11 w-full rounded-lg border border-[#d9e1da] bg-white px-3 text-sm outline-none focus:border-[#087a4f]";
 
@@ -18,6 +21,7 @@ export function ReferralsView() {
   const [items, setItems] = useState<Referral[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [fundsReferral, setFundsReferral] = useState<Referral | null>(null);
+  const [rulesReferral, setRulesReferral] = useState<Referral | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,6 +112,24 @@ export function ReferralsView() {
     }
   }
 
+  async function saveRules(referral: Referral, rules: RewardRules, autoReward: boolean) {
+    if (!business) throw new Error("No business selected.");
+    const token = await getToken();
+    if (!token) throw new Error("Your session could not provide an API token.");
+    const result = await crakApi.setRules(token, business.id, referral.id, {
+      reward_rules: rules,
+      auto_reward: autoReward,
+    });
+    setItems((current) =>
+      current.map((entry) =>
+        entry.id === referral.id
+          ? { ...entry, reward_rules: result.reward_rules, auto_reward: result.auto_reward }
+          : entry,
+      ),
+    );
+    return result.warnings;
+  }
+
   return (
     <div className="mx-auto max-w-[1320px]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -122,12 +144,19 @@ export function ReferralsView() {
           <div key={item.id} className="flex flex-col gap-4 border-b border-[#edf0ed] px-5 py-5 last:border-0 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div className="flex min-w-0 gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#eaf6ee] text-[#087a4f]"><UsersRound size={18} /></span>
-              <div className="min-w-0"><p className="truncate font-bold">{item.name}</p><p className="mt-1 text-xs text-[#78847c]">{item.code} · {item.balance.display} allocated</p>{item.description && <p className="mt-1 truncate text-xs text-[#929b95]">{item.description}</p>}</div>
+              <div className="min-w-0">
+                <p className="flex items-center gap-2 truncate font-bold">{item.name}
+                  {!ruleCount(item.reward_rules) && <span className="inline-flex items-center gap-1 rounded-full bg-[#fdf0dc] px-2 py-0.5 text-[10px] font-bold text-[#8a5b16]" title="No rules, so this campaign cannot pay anyone"><AlertTriangle size={11} /> Pays nothing</span>}
+                </p>
+                <p className="mt-1 text-xs text-[#78847c]">{item.code} · {item.balance.display} allocated · {ruleCount(item.reward_rules)} rule{ruleCount(item.reward_rules) === 1 ? "" : "s"}{item.auto_reward === false && " · needs approval"}</p>
+                {item.description && <p className="mt-1 truncate text-xs text-[#929b95]">{item.description}</p>}
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <select value={item.status} onChange={(event) => void updateStatus(item, event.target.value as ReferralStatus)} disabled={!canWrite} aria-label={`Status for ${item.name}`} className="h-9 rounded-lg border border-[#d9e1da] bg-white px-2 text-xs font-bold capitalize disabled:opacity-60">
                 <option value="draft">Draft</option><option value="active">Active</option><option value="paused">Paused</option><option value="closed">Closed</option>
               </select>
+              <button type="button" onClick={() => setRulesReferral(item)} disabled={business?.role !== "admin" && business?.role !== "owner"} title="Set what this campaign pays for" className="btn-secondary h-9 px-3 text-xs"><SlidersHorizontal size={14} /> Rules</button>
               <button type="button" onClick={() => setFundsReferral(item)} disabled={!canWrite} className="btn-secondary h-9 px-3 text-xs"><ArrowLeftRight size={14} /> Funds</button>
             </div>
           </div>
@@ -157,17 +186,14 @@ export function ReferralsView() {
           </form>
         </Dialog>
       )}
-    </div>
-  );
-}
-
-function Dialog({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-[#102219]/45 p-4 backdrop-blur-sm" onMouseDown={onClose}>
-      <div role="dialog" aria-modal="true" className="max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
-        <div className="flex items-start justify-between gap-4"><h2 className="text-xl font-bold">{title}</h2><button type="button" onClick={onClose} className="grid size-9 place-items-center rounded-lg bg-[#f1f4f1]" aria-label="Close dialog"><X size={17} /></button></div>
-        {children}
-      </div>
+      {rulesReferral && (
+        <RulesDialog
+          referral={rulesReferral}
+          currency={business?.currency ?? "SLE"}
+          onClose={() => setRulesReferral(null)}
+          onSave={(rules, autoReward) => saveRules(rulesReferral, rules, autoReward)}
+        />
+      )}
     </div>
   );
 }
