@@ -14,6 +14,7 @@ import {
 import { BrandLogo } from "@/components/brand-logo";
 import { ProductPreview } from "@/components/landing/product-preview";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { ClerkSignInLink, ClerkSignUpLink } from "@/components/landing/clerk-auth-links";
 
 const featureChips = [
   [MousePointerClick, "Referral campaigns"],
@@ -44,8 +45,8 @@ export default function Home() {
             <a href="#for-businesses" className="transition hover:text-[#087a4f]">For businesses</a>
           </nav>
           <div className="hidden items-center gap-3 lg:flex">
-            <Link href="/dashboard" className="btn-secondary !min-h-11">Sign in</Link>
-            <Link href="/dashboard" className="btn-primary !min-h-11">Start for free</Link>
+            <ClerkSignInLink className="btn-secondary !min-h-11">Sign in</ClerkSignInLink>
+            <ClerkSignUpLink className="btn-primary !min-h-11">Start for free</ClerkSignUpLink>
           </div>
           <details className="group relative lg:hidden">
             <summary className="grid size-11 cursor-pointer list-none place-items-center rounded-lg border border-[#dbe2dc] [&::-webkit-details-marker]:hidden" aria-label="Open menu"><Menu size={20} /></summary>
@@ -82,12 +83,12 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="marquee-shell border-y border-[#e1e7e2] bg-white py-7" aria-label="CRAK features">
+      <section className="container-shell marquee-shell py-7" aria-label="CRAK features">
         <div className="marquee-track">
           {[0, 1].map((copy) => (
             <div key={copy} className="marquee-group" aria-hidden={copy === 1}>
               {featureChips.map(([Icon, label]) => (
-                <div key={label} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-[#e0e7e1] bg-[#fbfcf8] px-4 py-2 text-xs font-semibold text-[#4e5d53]">
+                <div key={label} className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-[#e0e7e1] bg-[#fbfcf8] px-4 py-2 text-xs font-semibold text-[#4e5d53]">
                   <Icon size={15} className="text-[#087a4f]" /> {label}
                 </div>
               ))}
