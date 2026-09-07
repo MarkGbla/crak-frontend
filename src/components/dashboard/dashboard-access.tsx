@@ -4,7 +4,49 @@ import { SignInButton, SignUpButton, useAuth } from "@clerk/nextjs";
 import { FormEvent, useState } from "react";
 import { Building2, LoaderCircle } from "lucide-react";
 import { crakApi } from "@/lib/crak-api";
+import { Button } from "@/components/ui/button";
+import { Alert, Field, Input, Panel, Select } from "@/components/ui/dashboard";
+import { Cluster } from "@/components/ui/layout";
 import { useDashboardData } from "./dashboard-data-provider";
+
+/**
+ * The gate in front of every dashboard page.
+ *
+ * All four states — loading, signed out, failed, onboarding — share one
+ * centred layout, so the page does not jump as it resolves through them.
+ */
+function Gate({
+  icon,
+  title,
+  body,
+  children,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  body?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="mx-auto flex min-h-[62vh] w-full max-w-[var(--measure-narrow)] flex-col items-center justify-center gap-[var(--stack)] text-center">
+      <div className="flex flex-col items-center">
+        {icon && (
+          <span className="grid size-12 place-items-center rounded-[16px] bg-[var(--brand-50)] text-[var(--brand-700)]">
+            {icon}
+          </span>
+        )}
+        <h1 className="mt-5 text-[clamp(24px,4vw,32px)] font-semibold tracking-[-0.04em]">
+          {title}
+        </h1>
+        {body && (
+          <p className="mt-3 max-w-[52ch] text-[14.5px] leading-relaxed text-[var(--muted)]">
+            {body}
+          </p>
+        )}
+      </div>
+      {children && <div className="w-full">{children}</div>}
+    </div>
+  );
+}
 
 export function DashboardAccess({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn, getToken } = useAuth();
@@ -20,7 +62,10 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     try {
       const token = await getToken();
       if (!token) throw new Error("Your session has expired. Please sign in again.");
-      await crakApi.createBusiness(token, { name: String(form.get("name")), currency: String(form.get("currency")) as "SLE" | "USD" });
+      await crakApi.createBusiness(token, {
+        name: String(form.get("name")),
+        currency: String(form.get("currency")) as "SLE" | "USD",
+      });
       await refresh();
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : "Unable to create the workspace.");
@@ -29,13 +74,76 @@ export function DashboardAccess({ children }: { children: React.ReactNode }) {
     }
   }
 
-  if (!isLoaded || isLoading) return <div className="grid min-h-[55vh] place-items-center"><LoaderCircle className="animate-spin text-[#087a4f]" aria-label="Loading workspace" /></div>;
+  if (!isLoaded || isLoading) {
+    return (
+      <div className="grid min-h-[62vh] place-items-center">
+        <LoaderCircle
+          className="animate-spin text-[var(--brand-600)]"
+          aria-label="Loading workspace"
+        />
+      </div>
+    );
+  }
 
-  if (!isSignedIn) return <div className="mx-auto grid min-h-[65vh] max-w-lg place-items-center text-center"><div><span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#eaf6ee] text-[#087a4f]"><Building2 size={23} /></span><h1 className="mt-5 text-3xl font-semibold tracking-[-.05em]">Sign in to your CRAK workspace</h1><p className="mt-3 text-sm leading-6 text-[#68746d]">Use your secure account to manage real campaigns, wallet funds and rewards.</p><div className="mt-7 flex justify-center gap-3"><SignInButton><button className="btn-primary">Sign in</button></SignInButton><SignUpButton><button className="btn-secondary">Create account</button></SignUpButton></div></div></div>;
+  if (!isSignedIn) {
+    return (
+      <Gate
+        icon={<Building2 size={23} />}
+        title="Sign in to your CRAK workspace"
+        body="Use your secure account to manage real campaigns, wallet funds and rewards."
+      >
+        <Cluster className="justify-center">
+          <SignInButton>
+            <Button>Sign in</Button>
+          </SignInButton>
+          <SignUpButton>
+            <Button variant="outline">Create account</Button>
+          </SignUpButton>
+        </Cluster>
+      </Gate>
+    );
+  }
 
-  if (error) return <div className="mx-auto mt-12 max-w-xl rounded-2xl border border-[#efd2cb] bg-[#fff5f1] p-5 text-sm text-[#a1422c]"><p className="font-bold">We could not load your workspace.</p><p className="mt-2">{error}</p><button onClick={() => void refresh()} className="mt-4 font-bold underline">Try again</button></div>;
+  if (error) {
+    return (
+      <Gate title="We could not load your workspace">
+        <div className="flex flex-col items-center gap-4">
+          <Alert>{error}</Alert>
+          <Button variant="outline" onClick={() => void refresh()}>
+            Try again
+          </Button>
+        </div>
+      </Gate>
+    );
+  }
 
-  if (me?.needs_onboarding) return <div className="mx-auto max-w-lg py-12"><span className="grid size-12 place-items-center rounded-2xl bg-[#eaf6ee] text-[#087a4f]"><Building2 size={23} /></span><h1 className="mt-5 text-3xl font-semibold tracking-[-.05em]">Create your business workspace</h1><p className="mt-3 text-sm leading-6 text-[#68746d]">This creates your CRAK wallet and owner access. You can begin setting up campaigns once it is ready.</p><form onSubmit={createBusiness} className="mt-7 rounded-2xl border border-[#dfe5df] bg-white p-6"><label className="block text-xs font-bold">Business name<input name="name" required minLength={2} placeholder="e.g. Freetown Coffee Co." className="mt-2 h-11 w-full rounded-lg border border-[#d9e1da] px-3 text-sm font-normal outline-none focus:border-[#087a4f]" /></label><label className="mt-5 block text-xs font-bold">Base currency<select name="currency" defaultValue="SLE" className="mt-2 h-11 w-full rounded-lg border border-[#d9e1da] bg-white px-3 text-sm font-normal"><option value="SLE">SLE — Sierra Leonean Leone</option><option value="USD">USD — US Dollar</option></select></label>{formError && <p className="mt-4 text-xs font-semibold text-[#b04432]">{formError}</p>}<button disabled={creating} className="btn-primary mt-6 w-full disabled:opacity-60" type="submit">{creating ? "Creating workspace…" : "Create workspace"}</button></form></div>;
+  if (me?.needs_onboarding) {
+    return (
+      <Gate
+        icon={<Building2 size={23} />}
+        title="Create your business workspace"
+        body="This creates your CRAK wallet and owner access. You can set up campaigns once it is ready."
+      >
+        <Panel className="text-left">
+          <form onSubmit={createBusiness} className="flex flex-col gap-4 px-5 py-5">
+            <Field label="Business name">
+              <Input name="name" required minLength={2} placeholder="e.g. Freetown Coffee Co." />
+            </Field>
+            <Field label="Base currency">
+              <Select name="currency" defaultValue="SLE">
+                <option value="SLE">SLE — Sierra Leonean Leone</option>
+                <option value="USD">USD — US Dollar</option>
+              </Select>
+            </Field>
+            {formError && <Alert>{formError}</Alert>}
+            <Button type="submit" disabled={creating} className="w-full justify-center">
+              {creating ? "Creating workspace…" : "Create workspace"}
+            </Button>
+          </form>
+        </Panel>
+      </Gate>
+    );
+  }
 
   return children;
 }

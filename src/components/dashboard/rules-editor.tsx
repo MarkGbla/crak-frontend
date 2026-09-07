@@ -13,9 +13,9 @@ import type { RewardRule, RewardRules, RuleCap, RuleCondition } from "@/lib/crak
  */
 
 const fieldClass =
-  "mt-2 h-11 w-full rounded-lg border border-[#d9e1da] bg-white px-3 text-sm outline-none focus:border-[#087a4f]";
+  "mt-2 h-11 w-full rounded-[var(--radius-sm)] border border-[var(--line)] bg-white px-3 text-sm outline-none transition-colors duration-200 focus:border-[var(--brand-500)] focus:ring-2 focus:ring-[var(--brand-100)]";
 const smallField =
-  "h-10 rounded-lg border border-[#d9e1da] bg-white px-3 text-sm outline-none focus:border-[#087a4f]";
+  "h-10 rounded-[var(--radius-sm)] border border-[var(--line)] bg-white px-3 text-sm outline-none transition-colors duration-200 focus:border-[var(--brand-500)] focus:ring-2 focus:ring-[var(--brand-100)]";
 
 export type RuleRow = {
   key: string;
@@ -176,7 +176,7 @@ export function RulesEditor({
   return (
     <div className="mt-5 flex flex-col gap-3">
       {rows.map((row) => (
-        <div key={row.key} className="rounded-xl border border-[#e3e9e4] bg-[#fafbfa] p-4">
+        <div key={row.key} className="rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-2)] p-4">
           <div className="flex items-end gap-3">
             <label className="min-w-0 flex-1 text-xs font-bold">
               When this happens
@@ -195,13 +195,13 @@ export function RulesEditor({
               onClick={() => onChange(rows.filter((entry) => entry.key !== row.key))}
               disabled={disabled}
               aria-label={`Remove rule for ${row.event || "new event"}`}
-              className="mb-px grid size-11 shrink-0 place-items-center rounded-lg bg-[#f1f4f1] text-[#7b867e] hover:text-[#a53c2c] disabled:opacity-50"
+              className="mb-px grid size-11 shrink-0 place-items-center rounded-[var(--radius-sm)] bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--danger)] disabled:opacity-50"
             >
               <Trash2 size={16} />
             </button>
           </div>
 
-          <p className="mt-1 text-[11px] text-[#8b958d]">
+          <p className="mt-1 text-[11px] text-[var(--muted-2)]">
             The exact word your app sends. It must match, character for character.
           </p>
 
@@ -283,7 +283,7 @@ export function RulesEditor({
             </label>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-[#e9eeea] pt-4">
+          <div className="mt-4 flex flex-wrap items-end gap-3 border-t border-[var(--line)] pt-4">
             <label className="text-xs font-bold">
               Limit per referrer
               <select
@@ -352,16 +352,16 @@ export function RulesEditor({
 export function RuleWarnings({ warnings }: { warnings: string[] }) {
   if (!warnings.length) return null;
   return (
-    <div className="mt-5 rounded-xl border border-[#f0dfc3] bg-[#fdf6ea] p-4">
-      <p className="flex items-center gap-2 text-xs font-bold text-[#8a5b16]">
+    <div className="mt-5 rounded-[var(--radius)] border border-[var(--warn-line)] bg-[var(--warn-soft)] p-4">
+      <p className="flex items-center gap-2 text-xs font-bold text-[var(--warn)]">
         <AlertTriangle size={14} /> Check these names
       </p>
-      <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-xs leading-5 text-[#7c6338]">
+      <ul className="mt-2 flex list-disc flex-col gap-1 pl-5 text-xs leading-5 text-[var(--warn)]">
         {warnings.map((warning) => (
           <li key={warning}>{warning}</li>
         ))}
       </ul>
-      <p className="mt-3 text-[11px] text-[#95805a]">
+      <p className="mt-3 text-[11px] text-[var(--warn)]">
         A rule only pays when its name matches the word your app sends, exactly.
       </p>
     </div>
@@ -370,7 +370,7 @@ export function RuleWarnings({ warnings }: { warnings: string[] }) {
 
 export function NoRulesNotice() {
   return (
-    <p className="mt-4 flex items-start gap-2 rounded-xl bg-[#fdf6ea] px-4 py-3 text-xs leading-5 text-[#7c6338]">
+    <p className="mt-4 flex items-start gap-2 rounded-[var(--radius)] bg-[var(--warn-soft)] px-4 py-3 text-xs leading-5 text-[var(--warn)]">
       <Info size={14} className="mt-px shrink-0" />
       <span>
         This campaign has no rules, so nothing will be paid. Add at least one rule

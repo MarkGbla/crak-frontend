@@ -2,17 +2,243 @@
 
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
-import { Gift, WalletCards } from "lucide-react";
-import { crakApi } from "@/lib/crak-api";
-import type { Reward, Wallet } from "@/lib/crak-api";
+import { useCallback, useEffect, useState } from "react";
+import { Gift, Landmark, TrendingUp, UsersRound, WalletCards } from "lucide-react";
+import { crakApi, type Referral, type Reward, type Wallet } from "@/lib/crak-api";
 import { useDashboardData } from "@/components/dashboard/dashboard-data-provider";
+import {
+  Alert,
+  EmptyState,
+  Initials,
+  Money,
+  Panel,
+  PanelLink,
+  Row,
+  RowSkeleton,
+  StatCard,
+  StatusBadge,
+} from "@/components/ui/dashboard";
+import { CardGrid, Page, PageHeader, Split } from "@/components/ui/layout";
+import { ButtonLink } from "@/components/ui/button";
 
 export default function DashboardPage() {
   const { business, me } = useDashboardData();
   const { getToken } = useAuth();
+
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
-  useEffect(() => { if (!business) return; let active = true; void (async () => { const token = await getToken(); if (!token) return; const [nextWallet, nextRewards] = await Promise.all([crakApi.wallet(token, business.id), crakApi.rewards(token, business.id)]); if (active) { setWallet(nextWallet); setRewards(nextRewards.items); } })(); return () => { active = false; }; }, [business, getToken]);
-  return <div className="mx-auto max-w-[1320px]"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#849087]">Live workspace</p><h1 className="mt-2 text-3xl font-semibold tracking-[-.05em]">Welcome, {me?.user.email?.split("@")[0] ?? "there"}.</h1><p className="mt-2 text-sm text-[#6d7971]">Your real CRAK wallet and payout data.</p><section className="mt-7 grid gap-4 sm:grid-cols-2"><article className="rounded-2xl bg-[#0b6847] p-7 text-white"><WalletCards size={19} className="text-white/70" /><p className="mt-6 text-xs text-white/65">Available balance</p><p className="mt-2 text-4xl font-semibold">{wallet?.available.display ?? "Loading…"}</p><Link className="mt-6 inline-block text-xs font-bold text-[#dafa7b]" href="/dashboard/wallet">Open wallet →</Link></article><article className="rounded-2xl border border-[#dfe5df] bg-white p-7"><Gift size={19} className="text-[#087a4f]" /><p className="mt-6 text-xs text-[#758179]">Rewards recorded</p><p className="mt-2 text-4xl font-semibold">{rewards.length}</p><Link className="mt-6 inline-block text-xs font-bold text-[#087a4f]" href="/dashboard/rewards">View rewards →</Link></article></section><section className="mt-4 overflow-hidden rounded-2xl border border-[#dfe5df] bg-white"><div className="border-b border-[#e5eae6] px-6 py-4"><h2 className="font-bold">Recent rewards</h2></div>{rewards.length ? rewards.slice(0, 5).map((reward) => <div key={reward.id} className="flex justify-between border-b border-[#edf0ed] px-6 py-4 text-sm last:border-0"><span>{reward.recipient_name ?? reward.reference}</span><span className="font-bold">{reward.amount.display}</span></div>) : <p className="px-6 py-10 text-sm text-[#758179]">No rewards have been created yet.</p>}</section></div>;
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    if (!business) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Your session could not provide an API token.");
+      const [nextWallet, nextRewards, nextReferrals] = await Promise.all([
+        crakApi.wallet(token, business.id),
+        crakApi.rewards(token, business.id),
+        crakApi.referrals(token, business.id),
+      ]);
+      setWallet(nextWallet);
+      setRewards(nextRewards.items);
+      setReferrals(nextReferrals.items);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to load your workspace.");
+    } finally {
+      setLoading(false);
+    }
+  }, [business, getToken]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  const paid = rewards.filter((reward) => reward.status === "paid");
+  const inFlight = rewards.filter((reward) => ["reserved", "paying"].includes(reward.status));
+  const activeCampaigns = referrals.filter((referral) => referral.status === "active");
+  // A campaign with no rules accepts conversions and pays nobody. Worth
+  // surfacing on the first screen rather than three clicks in.
+  const unpriced = referrals.filter(
+    (referral) => Object.keys(referral.reward_rules ?? {}).length === 0,
+  );
+
+  const firstName = me?.user.email?.split("@")[0] ?? "there";
+
+  return (
+    <Page width="wide">
+      <PageHeader
+        eyebrow="Overview"
+        title={`Welcome back, ${firstName}`}
+        subtitle="Where your money is, and what it has paid for."
+        actions={
+          <>
+            <ButtonLink href="/dashboard/wallet" variant="outline" size="sm">
+              Add funds
+            </ButtonLink>
+            <ButtonLink href="/dashboard/referrals" variant="primary" size="sm" withArrow>
+              New campaign
+            </ButtonLink>
+          </>
+        }
+      />
+
+      {error && <Alert>{error}</Alert>}
+
+      {!loading && unpriced.length > 0 && (
+        <Alert tone="warn">
+          {unpriced.length === 1
+            ? `“${unpriced[0].name}” has no reward rules yet, so it cannot pay anyone.`
+            : `${unpriced.length} campaigns have no reward rules yet, so they cannot pay anyone.`}{" "}
+          <Link href="/dashboard/referrals" className="font-semibold underline">
+            Set them up
+          </Link>
+        </Alert>
+      )}
+
+      {/* Summary before detail: four figures answering "where is my money?" */}
+      <CardGrid>
+        <StatCard
+          tone="brand"
+          label="Available"
+          value={wallet?.available.display ?? "—"}
+          hint="Ready to allocate"
+          icon={<WalletCards size={17} />}
+          loading={loading}
+        />
+        <StatCard
+          label="On campaigns"
+          value={wallet?.allocated.display ?? "—"}
+          hint={`${activeCampaigns.length} active`}
+          icon={<Gift size={17} />}
+          loading={loading}
+        />
+        <StatCard
+          label="In flight"
+          value={wallet?.in_flight.display ?? "—"}
+          hint={`${inFlight.length} being paid`}
+          icon={<TrendingUp size={17} />}
+          loading={loading}
+        />
+        <StatCard
+          label="Rewards paid"
+          value={String(paid.length)}
+          hint={paid.length ? "All time" : "Nothing paid yet"}
+          icon={<UsersRound size={17} />}
+          loading={loading}
+        />
+      </CardGrid>
+
+      <Split
+        aside={
+          <>
+            <Panel
+              title="Campaigns"
+              actions={<PanelLink href="/dashboard/referrals">Manage</PanelLink>}
+            >
+              {loading ? (
+                <RowSkeleton rows={3} />
+              ) : referrals.length ? (
+                referrals.slice(0, 5).map((referral) => (
+                  <Row
+                    key={referral.id}
+                    title={referral.name}
+                    meta={<span className="font-mono text-[11px]">{referral.code}</span>}
+                    right={
+                      <>
+                        <Money size="sm">{referral.balance.display}</Money>
+                        <StatusBadge
+                          status={
+                            Object.keys(referral.reward_rules ?? {}).length === 0
+                              ? "pending_funds"
+                              : referral.status
+                          }
+                        />
+                      </>
+                    }
+                  />
+                ))
+              ) : (
+                <EmptyState
+                  icon={<UsersRound size={20} />}
+                  title="No campaigns"
+                  body="A campaign holds the budget your rewards are paid from."
+                />
+              )}
+            </Panel>
+
+            <Panel title="Wallet backing">
+              <div className="px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[var(--brand-50)] text-[var(--brand-700)]">
+                    <Landmark size={16} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold">
+                      {business?.monime_financial_account_id ? "Connected" : "Provisioning"}
+                    </p>
+                    <p className="truncate font-mono text-[11px] text-[var(--muted-2)]">
+                      {business?.monime_financial_account_id ?? "Setting up your Monime account"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-3.5">
+                  <span className="text-[12.5px] text-[var(--muted)]">Total held</span>
+                  <Money>{wallet?.total.display ?? "—"}</Money>
+                </div>
+              </div>
+            </Panel>
+          </>
+        }
+      >
+        <Panel
+          title="Recent rewards"
+          description="The latest payouts from your campaigns"
+          actions={<PanelLink href="/dashboard/rewards">View all</PanelLink>}
+        >
+          {loading ? (
+            <RowSkeleton rows={5} />
+          ) : rewards.length ? (
+            rewards.slice(0, 7).map((reward) => (
+              <Row
+                key={reward.id}
+                avatar={<Initials name={reward.recipient_name ?? reward.reference} />}
+                title={reward.recipient_name ?? reward.reference}
+                meta={
+                  <>
+                    {reward.destination_account}
+                    <span className="mx-1.5 opacity-40">·</span>
+                    {new Date(reward.created_at).toLocaleDateString()}
+                  </>
+                }
+                right={
+                  <>
+                    <Money tone={reward.status === "paid" ? "credit" : "plain"}>
+                      {reward.amount.display}
+                    </Money>
+                    <StatusBadge status={reward.status} />
+                  </>
+                }
+              />
+            ))
+          ) : (
+            <EmptyState
+              icon={<Gift size={20} />}
+              title="No rewards yet"
+              body="Once a campaign has rules and a conversion is reported, rewards appear here."
+              action={
+                <ButtonLink href="/dashboard/referrals" size="sm" withArrow>
+                  Set up a campaign
+                </ButtonLink>
+              }
+            />
+          )}
+        </Panel>
+      </Split>
+    </Page>
+  );
 }

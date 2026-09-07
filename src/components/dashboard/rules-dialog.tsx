@@ -60,7 +60,7 @@ export function RulesDialog({
 
   return (
     <Dialog title={`Rules for ${referral.name}`} onClose={onClose} wide>
-      <p className="mt-3 text-sm leading-6 text-[#758179]">
+      <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
         A price list for this campaign. Your app tells CRAK <b>what happened</b>; these
         rules decide <b>what it pays</b>. Change them any time — no code changes needed.
       </p>
@@ -77,12 +77,12 @@ export function RulesDialog({
                 onChange={(event) => setJson(event.target.value)}
                 spellCheck={false}
                 rows={14}
-                className="mt-2 w-full rounded-lg border border-[#d9e1da] bg-white p-3 font-mono text-xs outline-none focus:border-[#087a4f]"
+                className="mt-2 w-full rounded-[var(--radius-sm)] border border-[var(--line)] bg-white p-3 font-mono text-xs outline-none transition-colors duration-200 focus:border-[var(--brand-500)] focus:ring-2 focus:ring-[var(--brand-100)]"
                 placeholder={rulesPlaceholder}
               />
             </label>
             {!initial.supported && (
-              <p className="mt-2 text-[11px] text-[#8a5b16]">
+              <p className="mt-2 text-[11px] text-[var(--warn)]">
                 These rules use a condition the simple editor cannot show, so they are
                 shown as JSON to avoid changing what they pay.
               </p>
@@ -92,7 +92,7 @@ export function RulesDialog({
           <RulesEditor rows={rows} onChange={setRows} currency={currency} disabled={saving} />
         )}
 
-        <label className="mt-5 flex items-start gap-3 rounded-xl bg-[#f7faf8] p-4 text-xs leading-5">
+        <label className="mt-5 flex items-start gap-3 rounded-[var(--radius)] bg-[var(--surface-2)] p-4 text-xs leading-5">
           <input
             type="checkbox"
             checked={!autoReward}
@@ -101,14 +101,14 @@ export function RulesDialog({
           />
           <span>
             <b>Review each reward before paying.</b>
-            <span className="mt-1 block text-[#758179]">
+            <span className="mt-1 block text-[var(--muted)]">
               Conversions wait for your approval instead of paying straight away. Useful
               for a new campaign, or after a run of suspicious activity.
             </span>
           </span>
         </label>
 
-        {error && <p role="alert" className="mt-4 rounded-xl bg-[#fff0ed] px-4 py-3 text-sm font-semibold text-[#a53c2c]">{error}</p>}
+        {error && <p role="alert" className="mt-4 rounded-[var(--radius)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-semibold text-[var(--danger)]">{error}</p>}
         {warnings && <RuleWarnings warnings={warnings} />}
 
         <div className="mt-6 flex flex-wrap gap-3">
