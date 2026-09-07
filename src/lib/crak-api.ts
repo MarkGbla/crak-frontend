@@ -5,7 +5,7 @@ export type Page<T> = { items: T[]; next_cursor: string | null; has_more: boolea
 export type BusinessRole = "viewer" | "member" | "admin" | "owner";
 export type ReferralStatus = "draft" | "active" | "paused" | "closed";
 
-export type Business = { id: string; name: string; slug: string; status: string; currency: string; role?: BusinessRole; created_at: string };
+export type Business = { id: string; name: string; slug: string; status: string; currency: string; monime_financial_account_id: string | null; monime_uvan: string | null; provision_error: string | null; role?: BusinessRole; created_at: string };
 export type Me = { user: { id: string; clerk_user_id: string; email: string | null; is_active: boolean; created_at: string }; businesses: Business[]; needs_onboarding: boolean };
 export type Wallet = { business_id: string; currency: string; available: Money; allocated: Money; in_flight: Money; total: Money; wallet_ready: boolean };
 export type LedgerEntry = { id: string; transaction_id: string; amount: number; currency: string; balance_after: number; created_at: string };
@@ -69,7 +69,15 @@ async function request<T>(path: string, options: ApiOptions): Promise<T> {
   headers.set("Accept", "application/json");
   if (options.body !== undefined) headers.set("Content-Type", "application/json");
   if (options.idempotencyKey) headers.set("Idempotency-Key", options.idempotencyKey);
-  const response = await fetch(`${baseUrl}${path}`, { ...options, headers, body: options.body === undefined ? undefined : JSON.stringify(options.body), cache: "no-store" });
+  // A refused connection and a rejected token are different problems, and the
+  // browser reports the first as a bare "Failed to fetch". Left unwrapped it
+  // surfaces on the dashboard as though sign-in had failed.
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl}${path}`, { ...options, headers, body: options.body === undefined ? undefined : JSON.stringify(options.body), cache: "no-store" });
+  } catch (cause) {
+    throw new CrakApiError(0, cause, `Cannot reach the CRAK API at ${baseUrl}. Check that the backend is running.`);
+  }
   if (!response.ok) {
     const details: unknown = await response.json().catch(() => response.statusText);
     throw new CrakApiError(response.status, details, apiErrorMessage(response.status, details));
