@@ -1,67 +1,330 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { ArrowUpRight, Check, Copy, MoreHorizontal, Plus, Search, UsersRound, X } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
+import { AlertTriangle, ArrowLeftRight, Plus, SlidersHorizontal, UsersRound } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { crakApi, type Referral, type ReferralStatus, type RewardRules } from "@/lib/crak-api";
+import { Button } from "@/components/ui/button";
+import {
+  Alert,
+  Badge,
+  EmptyState,
+  Field,
+  Input,
+  Money,
+  Panel,
+  Row,
+  RowSkeleton,
+  Select,
+  StatusBadge,
+} from "@/components/ui/dashboard";
+import { Cluster, Page, PageHeader } from "@/components/ui/layout";
+import { useDashboardData } from "./dashboard-data-provider";
+import { Dialog, DialogActions } from "./dialog";
+import { RulesDialog } from "./rules-dialog";
+import { messageFrom } from "./view-utils";
 
-const seedCampaigns = [
-  { name: "Weekend Coffee Boost", code: "WEEKEND25", status: "Active", referrals: 128, reward: "Le 75", budget: "Le 9,600", color: "bg-[#e7f5eb]" },
-  { name: "Bring a Friend", code: "FRIEND120", status: "Active", referrals: 74, reward: "Le 120", budget: "Le 8,880", color: "bg-[#fff0e3]" },
-  { name: "First Cup Free", code: "FIRSTCUP", status: "Paused", referrals: 44, reward: "Le 50", budget: "Le 2,200", color: "bg-[#f1ecff]" },
-  { name: "Holiday Circle", code: "HOLIDAY", status: "Draft", referrals: 0, reward: "Le 100", budget: "Le 0", color: "bg-[#eaf2ff]" },
-] as const;
+const ruleCount = (rules: RewardRules | undefined) => Object.keys(rules ?? {}).length;
 
 export function ReferralsView() {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("All");
-  const [open, setOpen] = useState(false);
-  const [created, setCreated] = useState<string | null>(null);
-  const campaigns = useMemo(() => seedCampaigns.filter((item) => (filter === "All" || item.status === filter) && item.name.toLowerCase().includes(query.toLowerCase())), [filter, query]);
+  const { business } = useDashboardData();
+  const { getToken } = useAuth();
+  const [items, setItems] = useState<Referral[]>([]);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [fundsReferral, setFundsReferral] = useState<Referral | null>(null);
+  const [rulesReferral, setRulesReferral] = useState<Referral | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canWrite = business?.role !== "viewer";
 
-  function createCampaign(event: FormEvent<HTMLFormElement>) {
+  const load = useCallback(async () => {
+    if (!business) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Your session could not provide an API token.");
+      setItems((await crakApi.referrals(token, business.id)).items);
+    } catch (cause) {
+      setError(messageFrom(cause, "Unable to load referral campaigns."));
+    } finally {
+      setLoading(false);
+    }
+  }, [business, getToken]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
+
+  async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const values = new FormData(event.currentTarget);
-    setCreated(String(values.get("name")));
-    setOpen(false);
+    if (!business) return;
+    const form = new FormData(event.currentTarget);
+    setSubmitting(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Your session could not provide an API token.");
+      await crakApi.createReferral(token, business.id, {
+        name: String(form.get("name")),
+        code: String(form.get("code")).trim().toUpperCase(),
+        description: String(form.get("description") || "") || undefined,
+        default_reward_amount: Math.round(Number(form.get("reward")) * 100),
+        activate: true,
+      });
+      setCreateOpen(false);
+      await load();
+    } catch (cause) {
+      setError(messageFrom(cause, "Unable to create the campaign."));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function updateStatus(item: Referral, status: ReferralStatus) {
+    if (!business || item.status === status) return;
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Your session could not provide an API token.");
+      const updated = await crakApi.updateReferralStatus(token, business.id, item.id, status);
+      setItems((current) => current.map((entry) => entry.id === item.id ? updated : entry));
+    } catch (cause) {
+      setError(messageFrom(cause, "Unable to update campaign status."));
+    }
+  }
+
+  async function moveFunds(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!business || !fundsReferral) return;
+    const form = new FormData(event.currentTarget);
+    const direction = form.get("direction") === "release" ? "release" : "allocate";
+    const payload = {
+      amount: Math.round(Number(form.get("amount")) * 100),
+      reference: `${direction}_${crypto.randomUUID()}`,
+      note: String(form.get("note") || "") || undefined,
+    };
+    setSubmitting(true);
+    setError(null);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error("Your session could not provide an API token.");
+      const idempotencyKey = crypto.randomUUID();
+      if (direction === "release") await crakApi.release(token, business.id, fundsReferral.id, payload, idempotencyKey);
+      else await crakApi.allocate(token, business.id, fundsReferral.id, payload, idempotencyKey);
+      setFundsReferral(null);
+      await load();
+    } catch (cause) {
+      setError(messageFrom(cause, `Unable to ${direction} campaign funds.`));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function saveRules(referral: Referral, rules: RewardRules, autoReward: boolean) {
+    if (!business) throw new Error("No business selected.");
+    const token = await getToken();
+    if (!token) throw new Error("Your session could not provide an API token.");
+    const result = await crakApi.setRules(token, business.id, referral.id, {
+      reward_rules: rules,
+      auto_reward: autoReward,
+    });
+    setItems((current) =>
+      current.map((entry) =>
+        entry.id === referral.id
+          ? { ...entry, reward_rules: result.reward_rules, auto_reward: result.auto_reward }
+          : entry,
+      ),
+    );
+    return result.warnings;
   }
 
   return (
-    <div className="mx-auto max-w-[1320px]">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.12em] text-[#849087]">Campaigns</p><h1 className="mt-2 text-[30px] font-semibold tracking-[-0.045em] sm:text-4xl">Referrals</h1><p className="mt-2 text-sm text-[#6d7971]">Create and manage the offers your customers share.</p></div><button onClick={() => setOpen(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#087a4f] px-4 text-sm font-bold text-white" type="button"><Plus size={17} /> New campaign</button></div>
+    <Page width="wide">
+      <PageHeader
+        eyebrow="Live campaigns"
+        title="Referrals"
+        subtitle="Each campaign holds its own budget and decides what it pays for."
+        actions={
+          <Button size="sm" onClick={() => setCreateOpen(true)} disabled={!canWrite}>
+            <Plus size={15} /> New campaign
+          </Button>
+        }
+      />
 
-      {created && <div className="mt-6 flex items-center gap-3 rounded-xl border border-[#bcd9c6] bg-[#eaf6ee] p-4 text-sm text-[#075f40]"><span className="grid size-7 place-items-center rounded-full bg-[#087a4f] text-white"><Check size={15} /></span><span><strong>{created}</strong> was created in this preview.</span><button className="ml-auto" onClick={() => setCreated(null)} aria-label="Dismiss"><X size={16} /></button></div>}
+      {error && <Alert>{error}</Alert>}
 
-      <section className="mt-7 overflow-hidden rounded-2xl border border-[#dfe5df] bg-white">
-        <div className="flex flex-col gap-4 border-b border-[#e5eae6] p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="flex gap-1 overflow-x-auto">{["All", "Active", "Paused", "Draft"].map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-lg px-3 py-2 text-xs font-bold ${filter === item ? "bg-[#eaf6ee] text-[#087a4f]" : "text-[#6f7b73] hover:bg-[#f5f7f5]"}`} type="button">{item}</button>)}</div>
-          <label className="flex h-10 items-center gap-2 rounded-lg border border-[#dbe2dc] bg-[#fbfcfb] px-3 sm:w-64"><Search size={15} className="text-[#849087]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search campaigns" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></label>
-        </div>
-        <div className="divide-y divide-[#edf0ed]">
-          {campaigns.map((item) => (
-            <div key={item.code} className="grid gap-4 px-4 py-5 transition hover:bg-[#fbfcfb] sm:grid-cols-[1.4fr_.65fr_.65fr_.65fr_auto] sm:items-center sm:px-6">
-              <div className="flex items-center gap-3"><span className={`grid size-10 shrink-0 place-items-center rounded-xl ${item.color}`}><UsersRound size={18} /></span><div><p className="text-sm font-bold">{item.name}</p><button className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#7b877f]" type="button">{item.code} <Copy size={11} /></button></div></div>
-              <div><p className="text-[10px] uppercase tracking-[.08em] text-[#8b958e] sm:hidden">Referrals</p><p className="text-sm font-bold">{item.referrals}</p><p className="text-[10px] text-[#8b958e]">referrals</p></div>
-              <div><p className="text-sm font-bold">{item.reward}</p><p className="text-[10px] text-[#8b958e]">per reward</p></div>
-              <div><span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold ${item.status === "Active" ? "bg-[#eaf6ee] text-[#087a4f]" : item.status === "Paused" ? "bg-[#fff0e3] text-[#a65f27]" : "bg-[#eef1ee] text-[#69766e]"}`}>{item.status}</span><p className="mt-1 text-[10px] text-[#8b958e]">{item.budget} used</p></div>
-              <button className="grid size-9 place-items-center rounded-lg border border-[#dce3dd] text-[#6e7b72]" aria-label={`Actions for ${item.name}`}><MoreHorizontal size={17} /></button>
-            </div>
-          ))}
-          {campaigns.length === 0 && <div className="px-6 py-16 text-center"><Search className="mx-auto text-[#9aa49d]" /><p className="mt-3 text-sm font-bold">No campaigns found</p><p className="mt-1 text-xs text-[#7a867e]">Try another search or filter.</p></div>}
-        </div>
-      </section>
+      <Panel title="Campaigns" description={`${items.length} total`}>
+        {loading ? (
+          <RowSkeleton rows={4} />
+        ) : items.length ? (
+          items.map((item) => (
+            <Row
+              key={item.id}
+              avatar={
+                <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-[var(--brand-50)] text-[var(--brand-700)]">
+                  <UsersRound size={18} />
+                </span>
+              }
+              title={
+                <span className="flex flex-wrap items-center gap-2">
+                  {item.name}
+                  {!ruleCount(item.reward_rules) && (
+                    <Badge tone="warn">
+                      <AlertTriangle size={11} /> Pays nothing
+                    </Badge>
+                  )}
+                </span>
+              }
+              meta={
+                <>
+                  <span className="font-mono">{item.code}</span>
+                  <span className="mx-1.5 opacity-40">·</span>
+                  {ruleCount(item.reward_rules)} rule
+                  {ruleCount(item.reward_rules) === 1 ? "" : "s"}
+                  {item.auto_reward === false && (
+                    <>
+                      <span className="mx-1.5 opacity-40">·</span>needs approval
+                    </>
+                  )}
+                  {item.description && (
+                    <span className="block truncate">{item.description}</span>
+                  )}
+                </>
+              }
+              right={
+                <>
+                  <div className="hidden text-right sm:block">
+                    <Money size="sm">{item.balance.display}</Money>
+                    <p className="mt-0.5 text-[11px] text-[var(--muted-2)]">allocated</p>
+                  </div>
+                  <Cluster>
+                    {/* The status control is the badge: it shows state and changes it. */}
+                    <label className="relative">
+                      <span className="sr-only">Status for {item.name}</span>
+                      <StatusBadge status={item.status} />
+                      <select
+                        value={item.status}
+                        onChange={(event) =>
+                          void updateStatus(item, event.target.value as ReferralStatus)
+                        }
+                        disabled={!canWrite}
+                        className="absolute inset-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="active">Active</option>
+                        <option value="paused">Paused</option>
+                        <option value="closed">Closed</option>
+                      </select>
+                    </label>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRulesReferral(item)}
+                      disabled={business?.role !== "admin" && business?.role !== "owner"}
+                      title="Set what this campaign pays for"
+                    >
+                      <SlidersHorizontal size={14} /> Rules
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setFundsReferral(item)}
+                      disabled={!canWrite}
+                    >
+                      <ArrowLeftRight size={14} /> Funds
+                    </Button>
+                  </Cluster>
+                </>
+              }
+            />
+          ))
+        ) : (
+          <EmptyState
+            icon={<UsersRound size={20} />}
+            title="No campaigns yet"
+            body="A campaign is where you set a budget and decide what a referrer gets paid for."
+            action={
+              <Button size="sm" onClick={() => setCreateOpen(true)} disabled={!canWrite} withArrow>
+                Create your first campaign
+              </Button>
+            }
+          />
+        )}
+      </Panel>
 
-      {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#102219]/45 p-4 backdrop-blur-sm" role="presentation" onMouseDown={() => setOpen(false)}>
-          <div role="dialog" aria-modal="true" aria-labelledby="campaign-dialog-title" className="w-full max-w-lg rounded-[22px] bg-white p-6 shadow-2xl" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#087a4f]">New referral campaign</p><h2 id="campaign-dialog-title" className="mt-2 text-2xl font-semibold tracking-[-.04em]">Create something worth sharing</h2></div><button onClick={() => setOpen(false)} className="grid size-9 place-items-center rounded-lg bg-[#f2f5f2]" aria-label="Close"><X size={17} /></button></div>
-            <form className="mt-6 space-y-4" onSubmit={createCampaign}>
-              <label className="block text-xs font-bold">Campaign name<input name="name" required placeholder="e.g. September Coffee Circle" className="mt-2 h-11 w-full rounded-lg border border-[#d9e1da] px-3 text-sm font-normal outline-none focus:border-[#087a4f]" /></label>
-              <div className="grid gap-4 sm:grid-cols-2"><label className="block text-xs font-bold">Campaign code<input name="code" required placeholder="SEPTEMBER" className="mt-2 h-11 w-full rounded-lg border border-[#d9e1da] px-3 text-sm font-normal uppercase outline-none focus:border-[#087a4f]" /></label><label className="block text-xs font-bold">Reward amount<input name="reward" required type="number" placeholder="75.00" className="mt-2 h-11 w-full rounded-lg border border-[#d9e1da] px-3 text-sm font-normal outline-none focus:border-[#087a4f]" /></label></div>
-              <label className="block text-xs font-bold">Description<textarea name="description" rows={3} placeholder="Tell your team what this campaign is for" className="mt-2 w-full resize-none rounded-lg border border-[#d9e1da] p-3 text-sm font-normal outline-none focus:border-[#087a4f]" /></label>
-              <div className="flex gap-3 pt-2"><button type="button" onClick={() => setOpen(false)} className="btn-secondary flex-1">Cancel</button><button type="submit" className="btn-primary flex-1">Create campaign <ArrowUpRight size={16} /></button></div>
-            </form>
-          </div>
-        </div>
+      {createOpen && (
+        <Dialog
+          title="New campaign"
+          description="Creates an active campaign you can fund and price straight away."
+          onClose={() => setCreateOpen(false)}
+        >
+          <form onSubmit={create} className="flex flex-col gap-4">
+            <Field label="Name">
+              <Input required name="name" maxLength={160} placeholder="e.g. Summer referrals" />
+            </Field>
+            <Field label="Code" hint="Referrers share this code. It is stored uppercase.">
+              <Input required name="code" minLength={2} maxLength={64} placeholder="SUMMER25" />
+            </Field>
+            <Field label="Description" hint="Optional.">
+              <Input name="description" maxLength={500} />
+            </Field>
+            <Field label={`Default reward (${business?.currency})`}>
+              <Input required min="0.01" step="0.01" name="reward" type="number" />
+            </Field>
+            <DialogActions>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Creating…" : "Create campaign"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+                Cancel
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
       )}
-    </div>
+
+      {fundsReferral && (
+        <Dialog
+          title="Move funds"
+          description={`Campaign balance: ${fundsReferral.balance.display}`}
+          onClose={() => setFundsReferral(null)}
+        >
+          <form onSubmit={moveFunds} className="flex flex-col gap-4">
+            <Field label="Action">
+              <Select name="direction">
+                <option value="allocate">Allocate from wallet</option>
+                <option value="release">Release to wallet</option>
+              </Select>
+            </Field>
+            <Field label={`Amount (${business?.currency})`}>
+              <Input required name="amount" min="0.01" step="0.01" type="number" />
+            </Field>
+            <Field label="Note" hint="Optional.">
+              <Input name="note" maxLength={300} />
+            </Field>
+            <DialogActions>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? "Saving…" : "Move funds"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setFundsReferral(null)}>
+                Cancel
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      )}
+
+      {rulesReferral && (
+        <RulesDialog
+          referral={rulesReferral}
+          currency={business?.currency ?? "SLE"}
+          onClose={() => setRulesReferral(null)}
+          onSave={(rules, autoReward) => saveRules(rulesReferral, rules, autoReward)}
+        />
+      )}
+    </Page>
   );
 }

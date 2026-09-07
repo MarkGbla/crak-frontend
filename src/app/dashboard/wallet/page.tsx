@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { WalletView } from "@/components/dashboard/wallet-view";
+import { WalletLiveView } from "@/components/dashboard/wallet-view";
 
 export const metadata: Metadata = { title: "Wallet" };
-export default function WalletPage() { return <WalletView />; }
+export default function WalletPage() { return <WalletLiveView />; }

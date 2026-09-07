@@ -1,16 +1,91 @@
 @import "tailwindcss";
 
+/* ============================================================ design tokens
+   One green family drives the whole page: header and hero sit on 500, the CTA
+   banner and footer on 700/900, surfaces above white use the soft tints.
+   Components read these, so the palette retunes in one place. */
 :root {
-  --paper: #fbfcf8;
-  --ink: #13211a;
-  --muted: #66736b;
-  --line: #dde4de;
-  --green: #087a4f;
-  --green-dark: #075f40;
-  --green-soft: #e8f6ed;
-  --lime: #dafa7b;
-  --peach: #fff0e3;
-  --lilac: #f1ecff;
+  --brand-50: #eef9f2;
+  --brand-100: #d8f0e1;
+  --brand-200: #b2e2c4;
+  --brand-300: #86d1a3;
+  --brand-400: #6ac68e;
+  --brand-500: #57bd7e;
+  --brand-600: #43a86a;
+  --brand-700: #358c56;
+  --brand-800: #2b7146;
+  --brand-900: #1f5c39;
+
+  --paper: #ffffff;
+  /* Neutrals carry a slight green bias, so they sit under the brand rather
+     than beside it. */
+  --ink: #16231c;
+  --ink-2: #3d4b43;
+  --muted: #6d7c73;
+  --muted-2: #93a299;
+  --line: #e4ebe6;
+  --surface: #ffffff;
+  --surface-2: #f6faf7;
+  --accent-amber: #f2a93b;
+
+  /* Semantic tones. Separate from the brand hue on purpose: a status must not
+     read as "on brand", and the brand must not read as "success". */
+  --ok: #2b7146;
+  --ok-soft: #eaf7ef;
+  --warn: #8a5b16;
+  --warn-soft: #fdf6ea;
+  --warn-line: #f0dfc3;
+  --danger: #a5382a;
+  --danger-soft: #fdf0ed;
+  --danger-line: #f3d9d3;
+  --info: #2f6f8f;
+  --info-soft: #eef6fa;
+
+  /* The footer's own light band, and the hairline that rings its social
+     buttons. Neither belongs to the brand ramp. */
+  --footer-surface: #edf1ee;
+  --footer-line: #cfd9d2;
+
+  /* Dashboard chrome. */
+  --app-bg: #f5f9f6;
+  --sidebar: #ffffff;
+
+  /* ------------------------------------------------------------ app layout
+     One place owns the frame. The rail and top bar are structural; the three
+     measures are the only content widths a page may use; the gutter and stack
+     are the only two spacing values between blocks. Pages never restate any
+     of these, which is what stops the content column jumping width and the
+     rhythm drifting from screen to screen. */
+  --rail: 256px;
+  --topbar: 64px;
+  --page-x: 18px;
+  --gutter: 16px;
+  --stack: 18px;
+
+  --measure-wide: 1280px;
+  --measure: 1080px;
+  --measure-narrow: 720px;
+
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --shadow-sm: 0 1px 2px rgb(22 35 28 / 6%);
+  --shadow: 0 6px 20px -8px rgb(22 35 28 / 14%);
+  --shadow-lg: 0 24px 60px -22px rgb(22 35 28 / 26%);
+  --shadow-float: 0 18px 44px -18px rgb(22 35 28 / 22%);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The frame breathes with the viewport; the measures stay fixed, so a wide
+   screen gets more margin rather than longer lines. */
+@media (min-width: 640px) {
+  :root { --page-x: 26px; --gutter: 20px; --stack: 22px; }
+}
+@media (min-width: 1024px) {
+  :root { --page-x: 34px; --gutter: 22px; --stack: 26px; }
 }
 
 * { box-sizing: border-box; }
@@ -20,117 +95,154 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--font-geist-sans), Arial, sans-serif;
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-button, a, input, select { font: inherit; }
+button, a, input, select, textarea { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
-::selection { background: var(--lime); color: var(--ink); }
+::selection { background: var(--brand-200); color: var(--ink); }
 
+:focus-visible {
+  outline: 2px solid var(--brand-600);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* The newsletter pill owns its focus state: a rectangle drawn around the input
+   inside it cuts across the pill's shape. Keyboard focus still shows — it just
+   rings the whole control. */
+.newsletter-pill :focus-visible { outline: none; }
+.newsletter-pill:has(:focus-visible) {
+  outline: 3px solid var(--brand-100);
+  outline-offset: 0;
+}
+
+/* ================================================================== layout */
 .container-shell {
-  width: min(1180px, calc(100% - 40px));
+  width: min(1140px, calc(100% - 40px));
   margin-inline: auto;
 }
 
-.display-title { letter-spacing: -0.055em; text-wrap: balance; }
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid #cbd9ce;
-  border-radius: 999px;
-  padding: 7px 11px;
-  background: rgb(255 255 255 / 78%);
-  color: var(--green-dark);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.display-title {
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  line-height: 1.08;
+  font-weight: 600;
 }
 
-.btn-primary, .btn-secondary {
-  display: inline-flex;
-  min-height: 48px;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  border-radius: 10px;
-  padding: 0 20px;
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+.section-title {
+  font-size: clamp(28px, 4.2vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
 }
 
-.btn-primary {
-  border: 1px solid var(--green);
-  background: var(--green);
-  color: white;
-  box-shadow: 0 8px 22px rgb(8 122 79 / 16%);
+.section-sub {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+  text-wrap: balance;
 }
 
-.btn-primary:hover {
-  background: var(--green-dark);
-  border-color: var(--green-dark);
-  transform: translateY(-1px);
+/* The hero green dissolving into the page. */
+.brand-fade {
+  background:
+    linear-gradient(180deg,
+      var(--brand-500) 0%,
+      var(--brand-500) 44%,
+      color-mix(in srgb, var(--brand-500) 52%, white) 64%,
+      color-mix(in srgb, var(--brand-500) 10%, white) 84%,
+      var(--paper) 100%);
 }
-
-.btn-secondary {
-  border: 1px solid #cfd8d1;
-  background: white;
-  color: var(--ink);
-}
-
-.btn-secondary:hover { border-color: #aebcb2; background: #f7faf7; }
 
 .dot-grid {
   background-image: radial-gradient(#9ab6a4 0.7px, transparent 0.7px);
   background-size: 16px 16px;
 }
 
-.marquee-shell {
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 5%, black 95%, transparent);
+/* ================================================================= motion */
+@keyframes rise {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes floaty {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -9px, 0); }
+}
+@keyframes sweep {
+  from { transform: translateX(-130%) skewX(-12deg); }
+  to   { transform: translateX(240%) skewX(-12deg); }
 }
 
-.marquee-track {
-  display: flex;
-  width: max-content;
-  animation: marquee-scroll 22s linear infinite;
-  will-change: transform;
+/* Entrance animations. Stagger with --i on the element. */
+.anim-rise {
+  animation: rise 760ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
 }
-
-.marquee-shell:hover .marquee-track,
-.marquee-shell:focus-within .marquee-track {
-  animation-play-state: paused;
+.anim-fade {
+  animation: fade 900ms var(--ease-out) both;
+  animation-delay: calc(var(--i, 0) * 90ms);
 }
-
-.marquee-group {
-  display: flex;
-  min-width: 100vw;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: space-around;
-  gap: 36px;
-  padding-inline: 24px;
-}
+.anim-float { animation: floaty 6s ease-in-out infinite; }
+.anim-float-slow { animation: floaty 8s ease-in-out infinite -2.5s; }
 
 .scroll-reveal {
   opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 650ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 650ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: translate3d(0, 22px, 0);
+  transition: opacity 760ms var(--ease-out), transform 760ms var(--ease-out);
   will-change: opacity, transform;
 }
+.scroll-reveal.is-revealed { opacity: 1; transform: none; }
 
-.scroll-reveal.is-revealed {
-  opacity: 1;
-  transform: translateY(0);
+/* A single sheen across the app preview on load. */
+.sheen { position: relative; overflow: hidden; }
+.sheen::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 38%) 50%, transparent 60%);
+  animation: sweep 2.4s var(--ease-out) 1100ms both;
+  pointer-events: none;
 }
 
-@keyframes marquee-scroll {
-  to { transform: translateX(-50%); }
+/* =============================================== dashboard button classes
+   The dashboard predates these tokens and styles its buttons with these two
+   classes. Kept so nothing under /dashboard shifts. */
+.btn-primary, .btn-secondary {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 180ms var(--ease-out), transform 180ms var(--ease-out),
+              border-color 180ms var(--ease-out);
 }
+.btn-primary {
+  border: 1px solid var(--brand-700);
+  background: var(--brand-700);
+  color: white;
+  box-shadow: var(--shadow);
+}
+.btn-primary:hover:not(:disabled) { background: var(--brand-800); transform: translateY(-1px); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-secondary {
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+}
+.btn-secondary:hover:not(:disabled) { border-color: var(--brand-300); background: var(--surface-2); }
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .driver-popover.crak-tour {
   border-radius: 14px;
@@ -138,40 +250,28 @@ button, a { -webkit-tap-highlight-color: transparent; }
   box-shadow: 0 20px 70px rgb(12 37 24 / 20%);
   font-family: var(--font-geist-sans), sans-serif;
 }
-
 .driver-popover.crak-tour .driver-popover-title { color: var(--ink); font-size: 17px; }
 .driver-popover.crak-tour .driver-popover-description { color: var(--muted); line-height: 1.55; }
 .driver-popover.crak-tour .driver-popover-next-btn,
 .driver-popover.crak-tour .driver-popover-done-btn {
   border: 0;
   border-radius: 8px;
-  background: var(--green);
+  background: var(--brand-700);
   color: white;
   text-shadow: none;
 }
 
 @media (max-width: 640px) {
   .container-shell { width: min(100% - 28px, 1180px); }
-
-  .marquee-group {
-    gap: 16px;
-    padding-inline: 8px;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .anim-rise, .anim-fade, .anim-float, .anim-float-slow,
+  .sheen::after { animation: none !important; }
+  .scroll-reveal { opacity: 1; transform: none; transition: none !important; }
   *, *::before, *::after {
-    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .marquee-track {
-    animation: none;
-  }
-
-  .scroll-reveal {
-    opacity: 1;
-    transform: none;
-    transition: none !important;
   }
 }

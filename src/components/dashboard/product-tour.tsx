@@ -34,7 +34,7 @@ export function ProductTour() {
   }, [startTour]);
 
   return (
-    <button onClick={() => void startTour()} className="inline-flex h-10 items-center gap-2 rounded-lg border border-[#d9e1db] bg-white px-3 text-xs font-bold text-[#506057] transition hover:border-[#aebbb1]" type="button">
+    <button onClick={() => void startTour()} className="inline-flex h-10 items-center gap-2 rounded-lg border border-[var(--line)] bg-white px-3 text-xs font-bold text-[var(--ink-2)] transition hover:border-[var(--brand-300)]" type="button">
       <CircleHelp size={16} /> <span className="hidden sm:inline">Take a tour</span>
     </button>
   );
